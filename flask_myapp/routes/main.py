@@ -26,6 +26,15 @@ PERSON_GROUP_ID = os.environ['PERSON_GROUP_ID']
 # engine = create_engine(DATABASE_URL)
 # db = scoped_session(sessionmaker(bind=engine))
 
+dic={'1a8d4b0f-bd6f-43a2-a9dd-0ed93f388f15': '17',
+ '802c64ba-1e1e-4ad1-8dd2-71f7f7b23687': '15',
+ '909efec8-6673-4b88-961a-09eb26d7ccd3': '4',
+ '366a76da-b584-40e4-ab79-5d14b438df15': '13',
+ '720915a2-b280-4ecd-8a38-d0f175782678': '12',
+ '94390c1c-0353-48b2-b335-ef3535764315': '10',
+ 'dc112880-8f5c-4ad2-af19-76e2639d9e9b': '3',
+ 'b9bb6fc1-6bab-43fc-855c-0194dae032c2': 'Icon\r'}
+
 main = Blueprint('main', __name__)
 
 @main.route('/',methods=['POST','GET'])
@@ -68,6 +77,8 @@ def upload_file():
                 if(len(person.candidates)==0):
                     stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
                 else:
+                    print(person.candidates[0])
+                    return "He/She is "+str(dic[person.candidates[0].person_id])
                     stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
             return stroutput
             
