@@ -11,7 +11,6 @@ import glob
 from azure.cognitiveservices.vision.face import FaceClient
 from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person, SnapshotObjectType, OperationStatusType
-from PIL import Image, ImageDraw
 
 UPLOAD_FOLDER = 'flask_myapp/static/images'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
@@ -47,21 +46,8 @@ def upload_file():
     if request.method == 'POST':
         if request.files:
             image = request.files["image"]
-            
             #print("DEBUG -- ",image ,os.listdir())
             image.save(os.path.join(UPLOAD_FOLDER , image.filename))
-            img=Image.open(os.path.join(UPLOAD_FOLDER , image.filename))
-            width, height = img.size  
-            if(width>=2000 or  height>=2000):
-                print("resize/3")
-                newsize = int(width/3), int(height/3)
-                img=img.resize(newsize, Image.ANTIALIAS) 
-            elif (width>=1080 or  height>=1080):
-                print("resize/2")
-                newsize = (int(width/2), int(height/2)) 
-                img=img.resize(newsize, Image.ANTIALIAS)
-            img.save(os.path.join(UPLOAD_FOLDER , image.filename))
-
             '''
             Identify a face against a defined PersonGroup
             '''
@@ -92,8 +78,8 @@ def upload_file():
                     stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
                 else:
                     print(person.candidates[0])
-                    stroutput = stroutput+ "He/She is "+str(dic[person.candidates[0].person_id])+" with a confidence "+str(person.candidates[0].confidence)+".<br>"
-                    #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+                    return "He/She is "+str(dic[person.candidates[0].person_id])
+                    stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
             return stroutput
             
             return "Done"

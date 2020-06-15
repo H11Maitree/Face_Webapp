@@ -13,8 +13,6 @@ flask-sqlalchemy = "*"
 requests = "*"
 psycopg2 = "*"
 azure-cognitiveservices-vision-face = "*"
-pillow = "*"
-cv2 = "*"
 
 [requires]
 python_version = "3.7"
