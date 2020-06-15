@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+flask = "*"
+sqlalchemy = "*"
+gunicorn = "*"
+flask-sqlalchemy = "*"
+requests = "*"
+psycopg2 = "*"
+azure-cognitiveservices-vision-face = "*"
+
+[requires]
+python_version = "3.7"
