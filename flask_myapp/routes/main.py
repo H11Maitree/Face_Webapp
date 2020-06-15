@@ -17,7 +17,7 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 KEY = os.environ['FACE_SUBSCRIPTION_KEY']
 ENDPOINT = os.environ['FACE_ENDPOINT']
 face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
-PERSON_GROUP_ID = 'test01'
+PERSON_GROUP_ID = os.environ['PERSON_GROUP_ID']
 #export FLASK_DEBUG=1
 #export FLASK_APP=localrun.py
 
