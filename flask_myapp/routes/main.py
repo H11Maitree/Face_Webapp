@@ -66,9 +66,9 @@ def upload_file():
             for person in results:
                 print(person)
                 if(len(person.candidates)==0):
-                    stroutput=stroutput+("Face ID {} isn't match any people.\n".format(person.face_id))
+                    stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
                 else:
-                    stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.\n'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+                    stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
             return stroutput
             
             return "Done"
