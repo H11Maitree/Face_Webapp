@@ -78,8 +78,8 @@ def upload_file():
                     stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
                 else:
                     print(person.candidates[0])
-                    return "He/She is "+str(dic[person.candidates[0].person_id])
-                    stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+                    stroutput=stroutput+ "He/She is "+str(dic[person.candidates[0].person_id])+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
+                    #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
             return stroutput
             
             return "Done"
