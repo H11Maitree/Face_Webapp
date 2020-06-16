@@ -63,8 +63,13 @@ def upload_file():
             faces = face_client.face.detect_with_stream(image)
             if (len(faces)==0):
                 return "No face found"
+            co=0
             for face in faces:
+                if(co>=10):
+                    break
                 face_ids.append(face.face_id)
+                co=co+1
+            
             # Identify faces
             results = face_client.face.identify(face_ids, PERSON_GROUP_ID)
             print('Identifying faces in {}'.format(os.path.basename(image.name)))
