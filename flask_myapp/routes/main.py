@@ -11,15 +11,17 @@ import glob
 from azure.cognitiveservices.vision.face import FaceClient
 from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person, SnapshotObjectType, OperationStatusType
+from oauthlib.oauth2 import WebApplicationClient
 
 UPLOAD_FOLDER = 'flask_myapp/static/images'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
-KEY = os.environ['FACE_SUBSCRIPTION_KEY']
-ENDPOINT = os.environ['FACE_ENDPOINT']
-face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
-PERSON_GROUP_ID = os.environ['PERSON_GROUP_ID']
+KEY = os.environ.get('FACE_SUBSCRIPTION_KEY',None)
+ENDPOINT = os.environ.get('FACE_ENDPOINT',None)
+#face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
+PERSON_GROUP_ID = os.environ.get('PERSON_GROUP_ID',None)
 #export FLASK_DEBUG=1
 #export FLASK_APP=localrun.py
+#export OAUTHLIB_INSECURE_TRANSPORT=1
 
 # DATABASE_URL=os.environ.get('DATABASE_URL')
 
@@ -61,7 +63,72 @@ dic={'b5663c32-50d8-47cd-98b2-cd633ba4e5a2': '17',
  '81a0c260-1f0c-44ce-b56e-de1e01f643f3': 'Icon\r',
  '58846f8c-7ac0-411b-8851-5f8958c720b3': '23'}
 
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
+GOOGLE_DISCOVERY_URL = (
+    "https://accounts.google.com/.well-known/openid-configuration"
+)
+client = WebApplicationClient(GOOGLE_CLIENT_ID)
+
 main = Blueprint('main', __name__)
+
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
+
+@main.route("/login")
+def login():
+    # Find out what URL to hit for Google login
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+
+    # Use library to construct the request for Google login and provide
+    # scopes that let you retrieve user's profile from Google
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "/callback",
+        scope=["openid", "email", "profile"],
+    )
+    return redirect(request_uri)
+
+@main.route("/login/callback")
+def callback():
+    # Get authorization code Google sent back to you
+    code = request.args.get("code")
+
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+
+    token_url, headers, body = client.prepare_token_request(
+    token_endpoint,
+    authorization_response=request.url,
+    redirect_url=request.base_url,
+    code=code)
+
+    token_response = requests.post(
+    token_url,
+    headers=headers,
+    data=body,
+    auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    )
+
+    client.parse_request_body_response(json.dumps(token_response.json()))
+
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    print(userinfo_endpoint)
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
+    
+    print(userinfo_response)
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        picture = userinfo_response.json()["picture"]
+        users_name = userinfo_response.json()["given_name"]
+    else:
+        return "User email not available or not verified by Google.", 400
+
+    return users_email
+
 
 @main.route('/',methods=['POST','GET'])
 def index():
