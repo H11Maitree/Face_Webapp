@@ -154,7 +154,7 @@ def index():
 @main.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
     if alreadysignin()==False:
-        return redirect(url_for('main.login'))
+        return redirect(url_for('main.index'))
     if request.method == 'POST':
         if request.files:
             image = request.files["image"]
