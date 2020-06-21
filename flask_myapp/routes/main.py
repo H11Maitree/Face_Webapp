@@ -76,7 +76,8 @@ def alreadysignin():
     if session.get('usernow', -1)==-1:
         return False
     else:
-        return True
+        print("User : ",session.get('usernow', -1))
+        return session.get('usernow', -1)
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
