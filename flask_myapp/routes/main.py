@@ -85,6 +85,7 @@ def get_google_provider_cfg():
 def logout():
     session['usernow']=-1
     print("usernow = ",session['usernow'])
+    print("Re-directing to main.index")
     return redirect(url_for('main.index'))
 
 @main.route("/login")
@@ -101,6 +102,7 @@ def login():
         scope=["openid", "email", "profile"],
     )
     print("request_uri : ",request_uri)
+    print("Re-direct to google uri")
     return redirect(request_uri)
 
 @main.route("/login/callback")
@@ -141,64 +143,67 @@ def callback():
         return "User email not available or not verified by Google.", 400
     session['usernow']=users_email
     print('usernow : ',users_email)
+    print("Re-directing to main.upload_file")
     return redirect(url_for('main.upload_file'))
 
 
 @main.route('/',methods=['POST','GET'])
 def index():
     if alreadysignin():
-        return "Welcome "+session['usernow']+" to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.logout')+"\"> Logout.</a>"
+        return "Welcome "+session['usernow']+" to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.logout')+"\"> Logout.</a><br>"+"<a href=\""+url_for('main.upload_file')+"\">Upload Photo</a><br>"
     else:
         return "Welcome to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.login')+"\">Signin with Google.</a>"
 
 @main.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
     if alreadysignin()==False:
-        return redirect(url_for('main.index'))
-    if request.method == 'POST':
-        if request.files:
-            image = request.files["image"]
-            #print("DEBUG -- ",image ,os.listdir())
-            image.save(os.path.join(UPLOAD_FOLDER , image.filename))
-            '''
-            Identify a face against a defined PersonGroup
-            '''
-            # Group image for testing against
-            IMAGES_LOCATION = os.path.join(UPLOAD_FOLDER , image.filename)
+        return "You haven't sign-in : "+"<a href=\""+url_for('main.login')+"\">Signin with Google.</a><br>"
+    
+    return render_template("uploads.html")
 
-            # Get test image
-            test_image_array = glob.glob(IMAGES_LOCATION)
-            image = open(test_image_array[0], 'r+b')
+@main.route('/result', methods = ['GET', 'POST'])
+def result():
+    if request.files:
+        image = request.files["image"]
+        #print("DEBUG -- ",image ,os.listdir())
+        image.save(os.path.join(UPLOAD_FOLDER , image.filename))
+        '''
+        Identify a face against a defined PersonGroup
+        '''
+        # Group image for testing against
+        IMAGES_LOCATION = os.path.join(UPLOAD_FOLDER , image.filename)
 
-            # Detect faces
-            face_ids = []
-            faces = face_client.face.detect_with_stream(image)
-            if (len(faces)==0):
-                return "No face found"
-            co=0
-            for face in faces:
-                if(co>=10):
-                    break
-                face_ids.append(face.face_id)
-                co=co+1
+        # Get test image
+        test_image_array = glob.glob(IMAGES_LOCATION)
+        image = open(test_image_array[0], 'r+b')
+
+        # Detect faces
+        face_ids = []
+        faces = face_client.face.detect_with_stream(image)
+        if (len(faces)==0):
+            return "No face found"
+        co=0
+        for face in faces:
+            if(co>=10):
+                break
+            face_ids.append(face.face_id)
+            co=co+1
             
-            # Identify faces
-            results = face_client.face.identify(face_ids, PERSON_GROUP_ID)
-            print('Identifying faces in {}'.format(os.path.basename(image.name)))
-            if not results:
-                return ('No person identified in the person group for faces from {}.'.format(os.path.basename(image.name)))
-            print(results,len(results))
-            stroutput=''
-            for person in results:
-                print(person)
-                if(len(person.candidates)==0):
-                    stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
-                else:
-                    print(person.candidates[0])
-                    stroutput=stroutput+ "He/She is "+str(dic[person.candidates[0].person_id])+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
-                    #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
-            return stroutput
-            
-            return "Done"
+        # Identify faces
+        results = face_client.face.identify(face_ids, PERSON_GROUP_ID)
+        print('Identifying faces in {}'.format(os.path.basename(image.name)))
+        if not results:
+            return ('No person identified in the person group for faces from {}.'.format(os.path.basename(image.name)))
+        print(results,len(results))
+        stroutput=''
+        for person in results:
+            print(person)
+            if(len(person.candidates)==0):
+                stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
+            else:
+                print(person.candidates[0])
+                stroutput=stroutput+ "He/She is "+str(dic[person.candidates[0].person_id])+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
+                #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+        return stroutput
     else:
-        return render_template("uploads.html")
+        return "No File Uploaded"
