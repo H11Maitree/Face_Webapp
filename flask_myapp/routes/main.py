@@ -143,7 +143,7 @@ def callback():
     else:
         return "User email not available or not verified by Google.", 400
     session['usernow']=users_email
-    print('usernow : ',users_email)
+    print('usernow : ',session['usernow'],users_email)
     print("Re-directing to main.upload_file")
     return redirect(url_for('main.upload_file'))
 
@@ -157,7 +157,7 @@ def index():
 
 @main.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
-    if alreadysignin()==False:
+    if (alreadysignin()==False):
         return "You haven't sign-in : "+"<a href=\""+url_for('main.login')+"\">Signin with Google.</a><br>"
     
     return render_template("uploads.html")
