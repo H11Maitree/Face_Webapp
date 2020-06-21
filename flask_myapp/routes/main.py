@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session,jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session,jsonify, session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 import requests 
@@ -72,8 +72,20 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 main = Blueprint('main', __name__)
 
+def alreadysignin():
+    if session.get('usernow', -1)==-1:
+        return False
+    else:
+        return True
+
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
+
+@main.route("/logout")
+def logout():
+    session['usernow']=-1
+    print("usernow = ",session['usernow'])
+    return redirect(url_for('main.index'))
 
 @main.route("/login")
 def login():
@@ -88,6 +100,7 @@ def login():
         redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
     )
+    print("request_uri : ",request_uri)
     return redirect(request_uri)
 
 @main.route("/login/callback")
@@ -126,16 +139,22 @@ def callback():
         users_name = userinfo_response.json()["given_name"]
     else:
         return "User email not available or not verified by Google.", 400
-
-    return users_email
+    session['usernow']=users_email
+    print('usernow : ',users_email)
+    return redirect(url_for('main.upload_file'))
 
 
 @main.route('/',methods=['POST','GET'])
 def index():
-    return "Welcome to Face Web app"
+    if alreadysignin():
+        return "Welcome "+session['usernow']+" to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.logout')+"\"> Logout.</a>"
+    else:
+        return "Welcome to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.login')+"\">Signin with Google.</a>"
 
 @main.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
+    if alreadysignin()==False:
+        return redirect(url_for('main.login'))
     if request.method == 'POST':
         if request.files:
             image = request.files["image"]
