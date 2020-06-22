@@ -34,40 +34,11 @@ def addtransac(email,predicted):
                     COMMIT;""",{"email":email,"pre":predicted,"time":int(time.time())})
   print("Added transac")
 
-dic={'b5663c32-50d8-47cd-98b2-cd633ba4e5a2': '17',
- '1a540303-e69a-4c93-9bfa-ab3960c6580e': '15',
- '24c77cd1-bf67-44a6-8345-e46a26d4095c': '17',
- '4639437c-5319-4498-b91d-18848718025a': '15',
- 'f60d0c77-d97c-4cf0-b3b5-4e64d03ee109': '17',
- '94bb4e91-b615-4692-bb42-7e9d99fd616d': '17',
- '27123291-fcb4-41dc-9905-0061a02f7a2d': '15',
- '752f8a95-8ff7-470f-9601-422ea0307f37': '17',
- '6d9ad337-433d-471e-aa09-bba7de71ba42': '15',
- 'ea0ad98b-4437-42c2-8c07-c9713c423753': '4',
- 'a343843a-474c-4a6d-9488-e63cbd5a93f5': '13',
- '07c394d5-5d5a-45cc-93ed-1532895c3156': '12',
- 'f6b31dbe-f6bc-4e7a-b559-b1fe32238e0e': '12',
- '0ad86b07-72db-4820-b1ec-8994657b970a': '10',
- 'c48aae2b-b4ff-4019-899a-ff5fafd45460': '3',
- '624eb04d-fc9f-4242-98c6-e8666ababf84': '1',
- '0748ce85-3d0a-4d2f-b75a-3ba16ebc875a': '2',
- 'b18dd70e-55bc-41e2-a417-f5ca988db799': '5',
- '8ea518b0-32c1-433f-8f62-0239dd18823a': '6',
- '73ab8b1a-971f-4a35-8de9-7ae05ee1c96f': '7',
- 'da0944e9-0e89-40f5-a4af-ec80d5707eb5': '8',
- '6a33b4fe-7d8b-42ae-9459-10f0bf355d0c': '9',
- 'fb98db8f-2d7e-4e8c-8fa9-90817a67874a': '11',
- '851c9fa9-c112-498e-9b28-1d13123ccd19': '14',
- '9e18bdbc-3a92-427c-ab49-1aa057855423': '16',
- 'fa9870d7-44bc-440a-930e-36203ad06865': '18',
- 'f5ddee0c-f46f-4bf7-b7b5-a25fe072e512': '19',
- '7263051a-4db2-4619-bdc0-d6e154fb6503': '20',
- '1e3c33fc-46bf-4208-bd62-75cad58a1273': '21',
- '9038f94c-58f4-41fa-b814-a1a1352c0e8c': '22',
- 'd471fe4a-689b-4ddc-9bc7-611608b7607e': '23',
- 'b53218b8-9133-4148-ad55-5cf75c7f4307': '24',
- '81a0c260-1f0c-44ce-b56e-de1e01f643f3': 'Icon\r',
- '58846f8c-7ac0-411b-8851-5f8958c720b3': '23'}
+def getStudentID(PersonID):
+    res=db.execute(f"""
+                    SELECT "School_ID" FROM "user" WHERE "PersonID" = '{PersonID}';
+                    """).fetchall()
+    return res[0][0]
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
@@ -210,9 +181,9 @@ def result():
                 stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
                 addtransac(session.get('usernow', -1),"unknown face")
             else:
-                addtransac(session.get('usernow', -1),str(dic[person.candidates[0].person_id]))
+                addtransac(session.get('usernow', -1),str(getStudentID(person.candidates[0].person_id)))
                 print(person.candidates[0])
-                stroutput=stroutput+ "He/She is "+str(dic[person.candidates[0].person_id])+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
+                stroutput=stroutput+ "He/She is "+str(getStudentID(person.candidates[0].person_id))+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
                 #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
         return stroutput
     else:
