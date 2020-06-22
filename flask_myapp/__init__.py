@@ -8,5 +8,5 @@ def create_app(config_file='settings.py'):
     UPLOAD_FOLDER = './static/images'
     app.config["IMAGE_UPLOADS"] = UPLOAD_FOLDER
     app.register_blueprint(main)
-    app.config.update(SECRET_KEY=os.urandom(24))
+    #app.config.update(SECRET_KEY=os.urandom(24))
     return app
