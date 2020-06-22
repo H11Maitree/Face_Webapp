@@ -23,10 +23,16 @@ PERSON_GROUP_ID = os.environ.get('PERSON_GROUP_ID',None)
 #export FLASK_APP=localrun.py
 #export OAUTHLIB_INSECURE_TRANSPORT=1
 
-# DATABASE_URL=os.environ.get('DATABASE_URL')
+DATABASE_URL=os.environ.get('DATABASE_URL')
 
-# engine = create_engine(DATABASE_URL)
-# db = scoped_session(sessionmaker(bind=engine))
+engine = create_engine(DATABASE_URL)
+db = scoped_session(sessionmaker(bind=engine))
+
+def addtransac(email,predicted):
+  db.execute(""" INSERT INTO "Transcript" (user_email,prediction,timestamp)
+                    VALUES (:email,:pre,:time);
+                    COMMIT;""",{"email":email,"pre":predicted,"time":int(time.time())})
+  print("Added transac")
 
 dic={'b5663c32-50d8-47cd-98b2-cd633ba4e5a2': '17',
  '1a540303-e69a-4c93-9bfa-ab3960c6580e': '15',
@@ -74,6 +80,7 @@ main = Blueprint('main', __name__)
 
 def alreadysignin():
     if session.get('usernow', -1)==-1:
+        print("User = -1")
         return False
     else:
         print("User : ",session.get('usernow', -1))
@@ -143,7 +150,7 @@ def callback():
     else:
         return "User email not available or not verified by Google.", 400
     session['usernow']=users_email
-    print('usernow : ',session['usernow'],users_email)
+    print('usernow : ',session.get('usernow', -1),users_email)
     print("Re-directing to main.upload_file")
     return redirect(url_for('main.upload_file'))
 
@@ -201,7 +208,9 @@ def result():
             print(person)
             if(len(person.candidates)==0):
                 stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
+                addtransac(session.get('usernow', -1),"unknown face")
             else:
+                addtransac(session.get('usernow', -1),str(dic[person.candidates[0].person_id]))
                 print(person.candidates[0])
                 stroutput=stroutput+ "He/She is "+str(dic[person.candidates[0].person_id])+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
                 #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
