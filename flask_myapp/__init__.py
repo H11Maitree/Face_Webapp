@@ -9,4 +9,6 @@ def create_app(config_file='settings.py'):
     app.config["IMAGE_UPLOADS"] = UPLOAD_FOLDER
     app.register_blueprint(main)
     #app.config.update(SECRET_KEY=os.urandom(24))
+    app.secret_key = 'super secret key'
+    app.config['SESSION_TYPE'] = 'filesystem'
     return app
