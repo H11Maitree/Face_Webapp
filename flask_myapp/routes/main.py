@@ -215,6 +215,6 @@ def log():
                     """).fetchall()
 
     for row in res:
-        stroutput=stroutput+"Email : "+row[0]+" predicted you at "+str(datetime.fromtimestamp(row[1]))+"<br>"
+        stroutput=stroutput+"Email : "+row[0]+" predicted you at "+str(datetime.fromtimestamp(row[1]))+" Coordinated Universal Time (UTC)<br>"
     stroutput=stroutput+"<a href=\""+url_for('main.index')+"\">Go Home.</a>"
     return stroutput
