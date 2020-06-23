@@ -12,6 +12,7 @@ from azure.cognitiveservices.vision.face import FaceClient
 from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person, SnapshotObjectType, OperationStatusType
 from oauthlib.oauth2 import WebApplicationClient
+from datetime import datetime
 
 UPLOAD_FOLDER = 'flask_myapp/static/images'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
@@ -129,7 +130,7 @@ def callback():
 @main.route('/',methods=['POST','GET'])
 def index():
     if alreadysignin():
-        return "Welcome "+session['usernow']+" to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.logout')+"\"> Logout.</a><br>"+"<a href=\""+url_for('main.upload_file')+"\">Upload Photo</a><br>"
+        return "Welcome "+session['usernow']+" to Face Web app<br><br><a href=\""+url_for('main.log')+"\"> See your log.</a><br><a href=\""+url_for('main.logout')+"\"> Logout.</a><br>"+"<br><a href=\""+url_for('main.upload_file')+"\">Upload Photo</a><br>"
     else:
         return "Welcome to Face Web app<br>Login with MWIT account <a href=\""+url_for('main.login')+"\">Signin with Google.</a>"
 
@@ -185,6 +186,35 @@ def result():
                 print(person.candidates[0])
                 stroutput=stroutput+ "He/She is "+str(getStudentID(person.candidates[0].person_id))+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
                 #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+        stroutput=stroutput+"<a href=\""+url_for('main.upload_file')+"\">Go Back to file uploader.</a>"
         return stroutput
     else:
         return "No File Uploaded"
+
+def getStudentIDfromEmail(email=-1):
+    if email==-1:
+        return "Sorry It seem like you just logout"
+    else:
+        email=email.lower()
+        res=db.execute(f"""
+                    SELECT "School_ID" FROM "user" WHERE "email" = '{email}';
+                    """).fetchall()
+        if(len(res)==0):
+            return "No Student ID registered to this email pls contact our stuff."
+        return res[0][0]
+
+@main.route('/log', methods = ['GET', 'POST'])
+def log():
+    if (alreadysignin()==False):
+        return "You haven't sign-in : "+"<a href=\""+url_for('main.login')+"\">Signin with Google.</a><br>"
+    userstudentid=getStudentIDfromEmail(session.get('usernow', -1))
+    stroutput="Your ID : "+userstudentid+"<br><br>"
+
+    res=db.execute(f"""
+                    SELECT "user_email","timestamp" FROM "Transcript" WHERE "prediction" = '{userstudentid}';
+                    """).fetchall()
+
+    for row in res:
+        stroutput=stroutput+"Email : "+row[0]+" predicted you at "+str(datetime.fromtimestamp(row[1]))+"<br>"
+    stroutput=stroutput+"<a href=\""+url_for('main.index')+"\">Go Home.</a>"
+    return stroutput
