@@ -82,10 +82,11 @@ def linewebhook():
     # get X-Line-Signature header value
     signature = request.headers['X-Line-Signature']
     # get request body as text
-    body = request.get_data(as_text=True)
+    body = json.loads(request.get_data(as_text=True))
     # handle webhook body
     print("BODY:\n",str(body))
     if(body["events"]["message"]["type"]=="image"):
+        print("inif")
         line_bot_api.reply_message(body["events"]["reply_token"], "Image")
     # try:
     #     handler.handle(body, signature)
