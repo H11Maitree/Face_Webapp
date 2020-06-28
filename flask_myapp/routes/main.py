@@ -85,10 +85,12 @@ def linewebhook():
     body = request.get_data(as_text=True)
     # handle webhook body
     print("BODY:\n",str(body))
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
+    if(body["events"]["message"]["type"]=="image"):
+        line_bot_api.reply_message(body["events"]["reply_token"], "Image")
+    # try:
+    #     handler.handle(body, signature)
+    # except InvalidSignatureError:
+    #     abort(400)
     return 'OK'
 
 # 處理訊息
@@ -97,6 +99,7 @@ def handle_message(event):
     print("EVENT:\n",str(event))
     message = TextSendMessage(text=event.message.text)
     line_bot_api.reply_message(event.reply_token, message)
+
 
 
 @main.route("/logout")
