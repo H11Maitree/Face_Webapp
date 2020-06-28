@@ -84,7 +84,7 @@ def linewebhook():
     # get request body as text
     body = request.get_data(as_text=True)
     # handle webhook body
-    print(body)
+    print("BODY:\n",str(body))
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -94,6 +94,7 @@ def linewebhook():
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print("EVENT:\n",str(event))
     message = TextSendMessage(text=event.message.text)
     line_bot_api.reply_message(event.reply_token, message)
 
