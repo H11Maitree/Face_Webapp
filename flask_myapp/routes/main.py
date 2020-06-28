@@ -77,6 +77,10 @@ def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 @main.route("/linewebhook", methods=['POST'])
+def linewebhookdemo():
+    return 'OK'
+
+@main.route("/linewebhoo", methods=['POST'])
 def linewebhook():
 # 監聽所有來自 /callback 的 Post Request
     # get X-Line-Signature header value
