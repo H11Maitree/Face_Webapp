@@ -90,7 +90,7 @@ def linewebhook():
         print("inif")
         
         message_content = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
-        
+
         print("Check 1")
         with open("file_path.png", 'wb') as fd:
             for chunk in message_content.iter_content():
@@ -127,12 +127,12 @@ def linewebhook():
         for person in results:
             print(person)
             if(len(person.candidates)==0):
-                stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
+                stroutput=stroutput+("Face ID {} isn't match any people.\n".format(person.face_id))
                 addtransac(session.get('usernow', -1),"unknown face")
             else:
                 addtransac(session.get('usernow', -1),str(getStudentID(person.candidates[0].person_id)))
                 print(person.candidates[0])
-                stroutput=stroutput+ "He/She is "+str(getStudentID(person.candidates[0].person_id))+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
+                stroutput=stroutput+ "He/She is "+str(getStudentID(person.candidates[0].person_id))+" with a confidence of "+str(person.candidates[0].confidence)+"\n"
                 #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
         line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text=stroutput))
         #stroutput=stroutput+"<a href=\""+url_for('main.upload_file')+"\">Go Back to file uploader.</a>"
