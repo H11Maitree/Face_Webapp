@@ -88,7 +88,7 @@ def linewebhook():
     print("Type : ",type(body))
     if(body["events"][0]["message"]["type"]=="image"):
         print("inif")
-        line_bot_api.reply_message(body["events"][0]["reply_token"], "Image")
+        line_bot_api.reply_message(body["events"][0]["replyToken"], "Image")
     # try:
     #     handler.handle(body, signature)
     # except InvalidSignatureError:
