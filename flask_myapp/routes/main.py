@@ -89,7 +89,16 @@ def linewebhook():
     if(body["events"][0]["message"]["type"]=="image"):
         print("inif")
         
-        image = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
+        message_content = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
+        
+        print("Check 1")
+        with open("file_path.png", 'wb') as fd:
+            for chunk in message_content.iter_content():
+                fd.write(chunk)
+        
+        print("Check 2")
+        test_image_array = glob.glob("file_path.png")
+        image = open(test_image_array[0], 'r+b')
 
         print("in detect face")
         # Detect faces
@@ -112,6 +121,7 @@ def linewebhook():
         if not results:
             line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="No Persorn"))
             #return ('No person identified in the person group for faces from {}.'.format(os.path.basename(image.name)))
+            return 'OK'
         print(results,len(results))
         stroutput=''
         for person in results:
