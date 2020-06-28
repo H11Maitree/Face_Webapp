@@ -88,7 +88,46 @@ def linewebhook():
     print("Type : ",type(body))
     if(body["events"][0]["message"]["type"]=="image"):
         print("inif")
-        line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Image"))
+        
+        image = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
+
+        print("in detect face")
+        # Detect faces
+        face_ids = []
+        faces = face_client.face.detect_with_stream(image)
+        if (len(faces)==0):
+            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="No face found"))
+            return "OK"
+        co=0
+        for face in faces:
+            if(co>=10):
+                break
+            face_ids.append(face.face_id)
+            co=co+1
+        
+        print("in Identify face")
+        # Identify faces
+        results = face_client.face.identify(face_ids, PERSON_GROUP_ID)
+        print('Identifying faces in {}'.format(os.path.basename(image.name)))
+        if not results:
+            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="No Persorn"))
+            #return ('No person identified in the person group for faces from {}.'.format(os.path.basename(image.name)))
+        print(results,len(results))
+        stroutput=''
+        for person in results:
+            print(person)
+            if(len(person.candidates)==0):
+                stroutput=stroutput+("Face ID {} isn't match any people.<br>".format(person.face_id))
+                addtransac(session.get('usernow', -1),"unknown face")
+            else:
+                addtransac(session.get('usernow', -1),str(getStudentID(person.candidates[0].person_id)))
+                print(person.candidates[0])
+                stroutput=stroutput+ "He/She is "+str(getStudentID(person.candidates[0].person_id))+" with a confidence of "+str(person.candidates[0].confidence)+"<br>"
+                #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+        line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text=stroutput))
+        #stroutput=stroutput+"<a href=\""+url_for('main.upload_file')+"\">Go Back to file uploader.</a>"
+        #return stroutput
+        #line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Image"))
     # try:
     #     handler.handle(body, signature)
     # except InvalidSignatureError:
