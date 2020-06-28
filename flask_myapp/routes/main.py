@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session,jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, session,jsonify, session, abort
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 import requests 
@@ -83,7 +83,7 @@ def linewebhook():
     signature = request.headers['X-Line-Signature']
     # get request body as text
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
+    main.logger.info("Request body: " + body)
     # handle webhook body
     try:
         handler.handle(body, signature)
