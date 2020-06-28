@@ -14,12 +14,27 @@ from azure.cognitiveservices.vision.face.models import TrainingStatusType, Perso
 from oauthlib.oauth2 import WebApplicationClient
 from datetime import datetime
 
+from linebot import (
+    LineBotApi, WebhookHandler
+)
+from linebot.exceptions import (
+    InvalidSignatureError
+)
+from linebot.models import *
+
+
 UPLOAD_FOLDER = 'flask_myapp/static/images'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 KEY = os.environ.get('FACE_SUBSCRIPTION_KEY',None)
 ENDPOINT = os.environ.get('FACE_ENDPOINT',None)
 face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
 PERSON_GROUP_ID = os.environ.get('PERSON_GROUP_ID',None)
+
+# Channel Access Token
+line_bot_api = LineBotApi(os.environ.get('CHANNEL_ACCESS_TOKEN',None))
+# Channel Secret
+handler = WebhookHandler(os.environ.get('CHANNEL_SECRET',None))
+
 #export FLASK_DEBUG=1
 #export FLASK_APP=localrun.py
 #export OAUTHLIB_INSECURE_TRANSPORT=1
@@ -60,6 +75,28 @@ def alreadysignin():
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
+
+@main.route("/linewebhook", methods=['POST'])
+def linewebhook():
+# 監聽所有來自 /callback 的 Post Request
+    # get X-Line-Signature header value
+    signature = request.headers['X-Line-Signature']
+    # get request body as text
+    body = request.get_data(as_text=True)
+    app.logger.info("Request body: " + body)
+    # handle webhook body
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+    return 'OK'
+
+# 處理訊息
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    message = TextSendMessage(text=event.message.text)
+    line_bot_api.reply_message(event.reply_token, message)
+
 
 @main.route("/logout")
 def logout():

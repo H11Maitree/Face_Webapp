@@ -14,6 +14,7 @@ requests = "*"
 psycopg2 = "*"
 azure-cognitiveservices-vision-face = "*"
 oauthlib = "*"
+line-bot-sdk = "*"
 
 [requires]
 python_version = "3.7"
