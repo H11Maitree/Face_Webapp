@@ -13,6 +13,7 @@ from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person, SnapshotObjectType, OperationStatusType
 from oauthlib.oauth2 import WebApplicationClient
 from datetime import datetime
+import uuid
 
 from linebot import (
     LineBotApi, WebhookHandler
@@ -90,14 +91,16 @@ def linewebhook():
         print("inif")
         
         message_content = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
-
+        filenamesave=uuid.uuid4().hex
+        filenamesave=filenamesave+".png"
         print("Check 1")
-        with open("file_path.png", 'wb') as fd:
+
+        with open(filenamesave, 'wb') as fd:
             for chunk in message_content.iter_content():
                 fd.write(chunk)
         
         print("Check 2")
-        test_image_array = glob.glob("file_path.png")
+        test_image_array = glob.glob(filenamesave)
         image = open(test_image_array[0], 'r+b')
 
         print("in detect face")
@@ -123,17 +126,24 @@ def linewebhook():
             #return ('No person identified in the person group for faces from {}.'.format(os.path.basename(image.name)))
             return 'OK'
         print(results,len(results))
+        count_unknown=0
         stroutput=''
         for person in results:
             print(person)
             if(len(person.candidates)==0):
-                stroutput=stroutput+("Face ID {} isn't match any people.\n".format(person.face_id))
-                addtransac(session.get('usernow', -1),"unknown face")
+                count_unknown=count_unknown+1
+                #stroutput=stroutput+("Face ID {} isn't match any people.\n".format(person.face_id))
+                addtransac('line',"unknown face")
             else:
-                addtransac(session.get('usernow', -1),str(getStudentID(person.candidates[0].person_id)))
                 print(person.candidates[0])
-                stroutput=stroutput+ "He/She is "+str(getStudentID(person.candidates[0].person_id))+" with a confidence of "+str(person.candidates[0].confidence)+"\n"
-                #stroutput=stroutput+('Person for face ID {} is identified in {} with a confidence of {}.<br>'.format(person.face_id, os.path.basename(image.name), person.candidates[0].confidence)) # Get topmost confidence score
+                if(float(person.candidates[0].confidence)<60.4):
+                    addtransac('line',"unknown face")
+                    count_unknown=count_unknown+1
+                else:
+                    addtransac('line',str(getStudentID(person.candidates[0].person_id)))
+                    stroutput=stroutput+"ID : " +str(getStudentID(person.candidates[0].person_id))+" Confidence :"+str(person.candidates[0].confidence)[:4]+"\n"
+        if(count_unknown>0):
+            stroutput=stroutput+"There are "+str(count_unknown)+" people we don't know."
         line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text=stroutput))
         #stroutput=stroutput+"<a href=\""+url_for('main.upload_file')+"\">Go Back to file uploader.</a>"
         #return stroutput
