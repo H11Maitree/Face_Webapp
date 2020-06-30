@@ -136,7 +136,7 @@ def linewebhook():
                 addtransac('line',"unknown face")
             else:
                 print(person.candidates[0])
-                if(float(person.candidates[0].confidence)<60.4):
+                if(float(person.candidates[0].confidence)<0.604):
                     addtransac('line',"unknown face")
                     count_unknown=count_unknown+1
                 else:
