@@ -163,7 +163,7 @@ def linewebhook():
         print("inif")
         checkpi=checkpiroline(lineid=body["events"][0]["source"]["userId"])
         if (checkpi==False):
-            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Pls Login\n"+url_for(main.linelogin)+"?lineid="+body["events"][0]["source"]["userId"]))
+            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Pls Login\n"+url_for('main.linelogin')+"?lineid="+body["events"][0]["source"]["userId"]))
             return "OK"
 
         message_content = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
