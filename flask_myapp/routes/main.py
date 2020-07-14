@@ -101,7 +101,7 @@ def linelogin():
     # scopes that let you retrieve user's profile from Google
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
-        redirect_uri=request.base_url + "/callbackline?lineid="+request.args.get("lineid"),
+        redirect_uri=request.base_url + "/callback?lineid="+request.args.get("lineid"),
         scope=["openid", "email", "profile"],
     )
     print("request_uri : ",request_uri)
@@ -163,7 +163,7 @@ def linewebhook():
         print("inif")
         checkpi=checkpiroline(lineid=body["events"][0]["source"]["userId"])
         if (checkpi==False):
-            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Pls Login\n"+url_for('main.linelogin')+"?lineid="+body["events"][0]["source"]["userId"]))
+            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Pls Login\nhttps://facewebappmwit.herokuapp.com"+url_for('main.linelogin')+"?lineid="+body["events"][0]["source"]["userId"]))
             return "OK"
 
         message_content = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
