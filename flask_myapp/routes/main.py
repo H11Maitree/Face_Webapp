@@ -51,11 +51,26 @@ def addtransac(email,predicted):
                     COMMIT;""",{"email":email,"pre":predicted,"time":int(time.time())})
   print("Added transac")
 
+def addlinemap(email,lineid):
+    db.execute(""" INSERT INTO "linemapemail" (email,lineid)
+                    VALUES (:email,:lineid);
+                    COMMIT;""",{"email":email,"lineid":lineid})
+    print("Added linemap")
+
 def getStudentID(PersonID):
     res=db.execute(f"""
                     SELECT "School_ID" FROM "user" WHERE "PersonID" = '{PersonID}';
                     """).fetchall()
     return res[0][0]
+
+def checkpiroline(lineid):
+    res=db.execute(f"""
+                    SELECT "email" FROM "linemapemail" WHERE "lineid" = '{lineid}';
+                    """).fetchall()
+    if(len(res)==0):
+        return False
+    else:
+        return res[0][0]
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
@@ -77,6 +92,63 @@ def alreadysignin():
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
+@main.route("/linelogin", methods=['GET'])
+def linelogin():
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+
+    # Use library to construct the request for Google login and provide
+    # scopes that let you retrieve user's profile from Google
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "/callbackline?lineid="+request.args.get("lineid"),
+        scope=["openid", "email", "profile"],
+    )
+    print("request_uri : ",request_uri)
+    print("Re-direct to google uri")
+    return redirect(request_uri)
+
+@main.route("/linelogin/callback")
+def callback():
+    # Get authorization code Google sent back to you
+    code = request.args.get("code")
+
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+
+    token_url, headers, body = client.prepare_token_request(
+    token_endpoint,
+    authorization_response=request.url,
+    redirect_url=request.base_url,
+    code=code)
+
+    token_response = requests.post(
+    token_url,
+    headers=headers,
+    data=body,
+    auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    )
+
+    client.parse_request_body_response(json.dumps(token_response.json()))
+
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    print(userinfo_endpoint)
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
+    
+    print(userinfo_response)
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        picture = userinfo_response.json()["picture"]
+        users_name = userinfo_response.json()["given_name"]
+    else:
+        return "User email not available or not verified by Google.", 400
+    session['usernow']=users_email
+    print('usernow : ',session.get('usernow', -1),users_email)
+    addlinemap(email=users_email,lineid=request.args.get("lineid"))
+    return "SUCCESS<br>You may close this tap."
+
 @main.route("/linewebhook", methods=['POST'])
 def linewebhook():
 # 監聽所有來自 /callback 的 Post Request
@@ -89,7 +161,11 @@ def linewebhook():
     print("Type : ",type(body))
     if(body["events"][0]["message"]["type"]=="image"):
         print("inif")
-        
+        checkpi=checkpiroline(lineid=body["events"][0]["source"]["userId"])
+        if (checkpi==False):
+            line_bot_api.reply_message(body["events"][0]["replyToken"], TextSendMessage(text="Pls Login\n"+url_for(main.linelogin)+"?lineid="+body["events"][0]["source"]["userId"]))
+            return "OK"
+
         message_content = line_bot_api.get_message_content(body["events"][0]["message"]["id"])
         filenamesave=uuid.uuid4().hex
         filenamesave=filenamesave+".png"
@@ -133,14 +209,14 @@ def linewebhook():
             if(len(person.candidates)==0):
                 count_unknown=count_unknown+1
                 #stroutput=stroutput+("Face ID {} isn't match any people.\n".format(person.face_id))
-                addtransac('line',"unknown face")
+                addtransac(checkpi,"unknown face")
             else:
                 print(person.candidates[0])
                 if(float(person.candidates[0].confidence)<0.604):
-                    addtransac('line',"unknown face")
+                    addtransac(checkpi,"unknown face")
                     count_unknown=count_unknown+1
                 else:
-                    addtransac('line',str(getStudentID(person.candidates[0].person_id)))
+                    addtransac(checkpi,str(getStudentID(person.candidates[0].person_id)))
                     stroutput=stroutput+"ID : " +str(getStudentID(person.candidates[0].person_id))+" Confidence :"+str(person.candidates[0].confidence)[:4]+"\n"
         if(count_unknown>0):
             stroutput=stroutput+"There are "+str(count_unknown)+" people we don't know."
