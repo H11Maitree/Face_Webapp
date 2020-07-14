@@ -101,9 +101,10 @@ def linelogin():
     # scopes that let you retrieve user's profile from Google
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
-        redirect_uri=request.base_url + "/callback?lineid="+request.args.get("lineid"),
+        redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
     )
+    session['userlineid']=request.args.get("lineid")
     print("request_uri : ",request_uri)
     print("Re-direct to google uri")
     return redirect(request_uri)
@@ -146,7 +147,7 @@ def linelogincallback():
         return "User email not available or not verified by Google.", 400
     session['usernow']=users_email
     print('usernow : ',session.get('usernow', -1),users_email)
-    addlinemap(email=users_email,lineid=request.args.get("lineid"))
+    addlinemap(email=users_email,lineid=session.get('userlineid', -1))
     return "SUCCESS<br>You may close this tap."
 
 @main.route("/linewebhook", methods=['POST'])
