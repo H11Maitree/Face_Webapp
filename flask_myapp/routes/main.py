@@ -109,7 +109,7 @@ def linelogin():
     return redirect(request_uri)
 
 @main.route("/linelogin/callback")
-def callback():
+def linelogincallback():
     # Get authorization code Google sent back to you
     code = request.args.get("code")
 
@@ -237,8 +237,6 @@ def handle_message(event):
     message = TextSendMessage(text=event.message.text)
     line_bot_api.reply_message(event.reply_token, message)
 
-
-
 @main.route("/logout")
 def logout():
     session['usernow']=-1
@@ -303,7 +301,6 @@ def callback():
     print('usernow : ',session.get('usernow', -1),users_email)
     print("Re-directing to main.upload_file")
     return redirect(url_for('main.upload_file'))
-
 
 @main.route('/',methods=['POST','GET'])
 def index():
