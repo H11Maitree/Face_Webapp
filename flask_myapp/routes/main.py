@@ -46,10 +46,22 @@ engine = create_engine(DATABASE_URL)
 db = scoped_session(sessionmaker(bind=engine))
 
 def addtransac(email,predicted):
-  db.execute(""" INSERT INTO "Transcript" (user_email,prediction,timestamp)
+    db.execute(""" INSERT INTO "Transcript" (user_email,prediction,timestamp)
                     VALUES (:email,:pre,:time);
                     COMMIT;""",{"email":email,"pre":predicted,"time":int(time.time())})
-  print("Added transac")
+    print("Added transac")
+
+def addconsent(email,isyes):
+    db.execute(""" INSERT INTO "Consent" (user_email,giveconsent,timestamp)
+                    VALUES (:email,:isyes,:time);
+                    COMMIT;""",{"email":email,"isyes":isyes,"time":int(time.time())})
+    print("Added consent")
+
+def addformtran(photoid,realid):
+    db.execute(""" INSERT INTO "Form" (photoname,realid,timestamp)
+                    VALUES (:photoid,:realid,:time);
+                    COMMIT;""",{"photoid":photoid,"realid":realid,"time":int(time.time())})
+    print("Added formtran")
 
 def addlinemap(email,lineid):
     db.execute(""" INSERT INTO "linemapemail" (email,lineid)
@@ -91,6 +103,89 @@ def alreadysignin():
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
+
+@main.route("/form")
+def form():
+    if(request.method=='POST'):
+        photoid=request.args.get("id")
+        addformtran(photoid=photoid,realid=request.args.get("studentid"))
+        return render_template("thankyou.html")
+    else:
+        photoid=request.args.get("id")
+        return render_template("form.html",action=url_for("main.form")+"?id="+photoid)
+
+@main.route("/consent", methods=['GET'])
+def consent():
+    if alreadysignin():
+        return render_template("consent.html",useremail=session.get('usernow'))
+    else:
+        return redirect(url_for('main.consentlogin'))
+
+@main.route("/consenthandle", methods=['POST'])
+def consenthandle():
+    if(request.args.get("ask1")=='yes'):
+        addconsent(email=session.get('usernow'),isyes=True)
+    else:
+        addconsent(email=session.get('usernow'),isyes=False)
+    return render_template("thankyou.html")
+
+@main.route("/consentlogin")
+def consentlogin():
+    # Find out what URL to hit for Google login
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+
+    # Use library to construct the request for Google login and provide
+    # scopes that let you retrieve user's profile from Google
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "/callback",
+        scope=["openid", "email", "profile"],
+    )
+    print("request_uri : ",request_uri)
+    print("Re-direct to google uri")
+    return redirect(request_uri)
+
+@main.route("/consentlogin/callback")
+def consentcallback():
+    # Get authorization code Google sent back to you
+    code = request.args.get("code")
+
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+
+    token_url, headers, body = client.prepare_token_request(
+    token_endpoint,
+    authorization_response=request.url,
+    redirect_url=request.base_url,
+    code=code)
+
+    token_response = requests.post(
+    token_url,
+    headers=headers,
+    data=body,
+    auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    )
+
+    client.parse_request_body_response(json.dumps(token_response.json()))
+
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    print(userinfo_endpoint)
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
+    
+    print(userinfo_response)
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        picture = userinfo_response.json()["picture"]
+        users_name = userinfo_response.json()["given_name"]
+    else:
+        return "User email not available or not verified by Google.", 400
+    session['usernow']=users_email
+    print('usernow : ',session.get('usernow', -1),users_email)
+    print("Re-directing to main.consent")
+    return redirect(url_for('main.consent'))
 
 @main.route("/linelogin", methods=['GET'])
 def linelogin():
