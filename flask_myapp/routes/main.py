@@ -104,7 +104,7 @@ def alreadysignin():
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
-@main.route("/form")
+@main.route("/form",methods=['GET','POST'])
 def form():
     if(request.method=='POST'):
         photoid=request.args.get("id")
