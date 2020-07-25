@@ -108,7 +108,7 @@ def get_google_provider_cfg():
 def form():
     if(request.method=='POST'):
         photoid=request.args.get("id")
-        addformtran(photoid=photoid,realid=request.args.get("studentid"))
+        addformtran(photoid=photoid,realid=request.form.get("studentid"))
         return render_template("thankyou.html")
     else:
         photoid=request.args.get("id")
@@ -123,7 +123,7 @@ def consent():
 
 @main.route("/consenthandle", methods=['POST'])
 def consenthandle():
-    if(request.args.get("ask1")=='yes'):
+    if(request.form.get("ask1")=='yes'):
         addconsent(email=session.get('usernow'),isyes=True)
     else:
         addconsent(email=session.get('usernow'),isyes=False)
